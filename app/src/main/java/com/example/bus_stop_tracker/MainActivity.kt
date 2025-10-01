@@ -1,0 +1,197 @@
+package com.example.bus_stop_tracker
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import com.example.bus_stop_tracker.ui.theme.BusstoptrackerTheme
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent {
+            BusstoptrackerTheme {
+                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    MainScreen(
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MainScreen(modifier: Modifier = Modifier) {
+    var showSearch by remember { mutableStateOf(false) }
+    var selectedStops by remember { mutableStateOf(listOf<String>()) }
+
+    if (showSearch) {
+        SearchScreen(
+            onStopSelected = { stop ->
+                // Add stop only if it’s not already in the list
+                if (!selectedStops.contains(stop)) {
+                    selectedStops = selectedStops + stop
+                }
+                showSearch = false
+            },
+            onBack = { showSearch = false },
+            modifier = modifier
+        )
+    } else {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = modifier
+                .fillMaxSize()        // Take up full screen
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "Widget Setup",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+            OutlinedButton(
+                onClick = { showSearch = true },
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth().height(40.dp)
+            )
+            {
+                Icon(Icons.Default.Search, contentDescription = "Search Icon")
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Search for a stop")
+            }
+
+            Text(
+                text = "Currently displaying: "
+            )
+            Column {
+                if(selectedStops.isEmpty()) {
+                    Text("No selected stops")
+                } else {
+                    selectedStops.forEach { stop ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("• $stop")
+
+                            Button (onClick = { selectedStops = selectedStops - stop },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.Transparent,
+                                    contentColor = Color.Black
+                                )
+                            ) {Text("x", textAlign = TextAlign.End) }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SearchScreen(onStopSelected: (String) -> Unit, onBack: () -> Unit, modifier: Modifier = Modifier) {
+    var query by remember { mutableStateOf("") }
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+    ) {
+        Row (
+            modifier = Modifier
+                .padding( horizontal = 4.dp)
+        ){
+            Button(onClick = { onBack() },
+                modifier = Modifier.size(50.dp),
+                shape = CircleShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = Color.Black)) {
+                Text("<")
+            }
+
+            TextField(
+                value = query,
+                onValueChange = { query = it },
+                label = { Text("Search for a stop") },
+                modifier = Modifier.fillMaxWidth()
+                    .height(50.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    cursorColor = Color.Black,
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent
+                )
+            )
+        }
+        HorizontalDivider()
+        val stops = listOf("Pramogų arena", "Stotis", "Didlaukio", "Myloko Romerio univeristetas", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a") // your txt stops later
+        val filteredStops = stops.filter { it.contains(query, ignoreCase = true) }
+
+        Column {
+            filteredStops.forEach { stop ->
+                Button(
+                    onClick = { onStopSelected(stop) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Transparent,
+                        contentColor = Color.Black
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RectangleShape
+                ) {
+                    Text(
+                        stop,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Start // aligns text to the left
+                    )
+                }
+            }
+        }
+    }
+
+}
+
+
+@Preview(showBackground = true)
+@Composable
+fun MainScreenPreview() {
+    BusstoptrackerTheme {
+        MainScreen()
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SearchScreenPreview() {
+    BusstoptrackerTheme {
+        SearchScreen(
+            onStopSelected = {},
+            onBack = {}
+        )
+    }
+}
