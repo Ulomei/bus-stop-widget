@@ -99,7 +99,9 @@ fun MainScreen(modifier: Modifier = Modifier) {
             }
 
             Text(
-                text = "Currently displaying: "
+                text = "Currently displaying: ",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
             )
             Column {
                 if(selectedStops.isEmpty()) {
@@ -112,9 +114,19 @@ fun MainScreen(modifier: Modifier = Modifier) {
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("• ${stop.name}")
+                            Column {
+                                Text(
+                                    stop.name,
+                                )
+                                Text(
+                                    text = stop.desc ?: "-",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
 
                             Button (onClick = { selectedStops = selectedStops - stop },
+                                modifier = Modifier.size(50.dp),
+                                shape = CircleShape,
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = Color.Transparent,
                                     contentColor = Color.Black
@@ -153,6 +165,7 @@ fun SearchScreen(allStops: List<Stop>, onStopSelected: (Stop) -> Unit, onBack: (
                 Text("<")
             }
 
+            //TO DO allow Lithuanian letters
             TextField(
                 value = query,
                 onValueChange = { query = it },
