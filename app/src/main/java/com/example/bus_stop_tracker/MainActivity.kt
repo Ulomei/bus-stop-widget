@@ -5,8 +5,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -187,7 +189,11 @@ fun SearchScreen(allStops: List<Stop>, onStopSelected: (Stop) -> Unit, onBack: (
         }
         HorizontalDivider()
 
-        Column {
+        Column (
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+        ) {
             visibleStops.forEach { stop ->
                 Button(
                     onClick = { onStopSelected(stop) },
@@ -212,6 +218,15 @@ fun SearchScreen(allStops: List<Stop>, onStopSelected: (Stop) -> Unit, onBack: (
                         )
                     }
                 }
+            }
+            if (visibleStops.size == 20)
+            {
+                Text(
+                    text = "Showing max 20 options",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         }
     }
