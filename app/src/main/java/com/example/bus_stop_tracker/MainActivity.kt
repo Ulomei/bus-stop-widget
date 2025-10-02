@@ -17,16 +17,30 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalContext
+import com.example.bus_stop_tracker.data.Stop
+import com.example.bus_stop_tracker.data.loadStopsFromAssets
 import com.example.bus_stop_tracker.ui.theme.BusstoptrackerTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        /*val stops = loadStopsFromAssets(this)
+        Log.d("MainActivity", "Loaded ${stops.size} stops")
+        if (stops.isNotEmpty()) {
+            Log.d("MainActivity", "First stop: ${stops.first()}")
+        }
+        if (stops.size > 1) {
+            Log.d("MainActivity", "Second stop: ${stops[4]}")
+        }*/
+
         enableEdgeToEdge()
         setContent {
             BusstoptrackerTheme {
@@ -43,12 +57,16 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreen(modifier: Modifier = Modifier) {
     var showSearch by remember { mutableStateOf(false) }
-    var selectedStops by remember { mutableStateOf(listOf<String>()) }
+    var selectedStops by remember { mutableStateOf(listOf<Stop>()) }
+    val context = LocalContext.current
+    val allStops by produceState(initialValue = emptyList<Stop>(), context) {
+        value = loadStopsFromAssets(context)
+    }
 
     if (showSearch) {
         SearchScreen(
-            onStopSelected = { stop ->
-                // Add stop only if it’s not already in the list
+            allStops = allStops,
+            onStopSelected = { stop: Stop ->
                 if (!selectedStops.contains(stop)) {
                     selectedStops = selectedStops + stop
                 }
@@ -94,7 +112,7 @@ fun MainScreen(modifier: Modifier = Modifier) {
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("• $stop")
+                            Text("• ${stop.name}")
 
                             Button (onClick = { selectedStops = selectedStops - stop },
                                 colors = ButtonDefaults.buttonColors(
@@ -111,8 +129,13 @@ fun MainScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun SearchScreen(onStopSelected: (String) -> Unit, onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun SearchScreen(allStops: List<Stop>, onStopSelected: (Stop) -> Unit, onBack: () -> Unit, modifier: Modifier = Modifier) {
+
     var query by remember { mutableStateOf("") }
+
+    val filteredStops = allStops.filter { it.name.contains(query, ignoreCase = true) }
+    val visibleStops = filteredStops.take(20)
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -150,11 +173,9 @@ fun SearchScreen(onStopSelected: (String) -> Unit, onBack: () -> Unit, modifier:
             )
         }
         HorizontalDivider()
-        val stops = listOf("Pramogų arena", "Stotis", "Didlaukio", "Myloko Romerio univeristetas", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a") // your txt stops later
-        val filteredStops = stops.filter { it.contains(query, ignoreCase = true) }
 
         Column {
-            filteredStops.forEach { stop ->
+            visibleStops.forEach { stop ->
                 Button(
                     onClick = { onStopSelected(stop) },
                     colors = ButtonDefaults.buttonColors(
@@ -164,11 +185,19 @@ fun SearchScreen(onStopSelected: (String) -> Unit, onBack: () -> Unit, modifier:
                     modifier = Modifier.fillMaxWidth(),
                     shape = RectangleShape
                 ) {
-                    Text(
-                        stop,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Start // aligns text to the left
-                    )
+                    Column {
+                        Text(
+                            stop.name,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Start
+                        )
+                        Text(
+                            text = stop.desc ?: "-",
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Start,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
             }
         }
@@ -189,7 +218,14 @@ fun MainScreenPreview() {
 @Composable
 fun SearchScreenPreview() {
     BusstoptrackerTheme {
+        val mockStops = listOf(
+            Stop("1", "001", "Pramogų arena", "Smth", null, null),
+            Stop("2", "002", "Stotis", "More", null, null),
+            Stop("3", "003", "Didlaukio", "Written", null, null),
+        )
+
         SearchScreen(
+            allStops = mockStops,
             onStopSelected = {},
             onBack = {}
         )
