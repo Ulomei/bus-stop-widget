@@ -26,14 +26,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
-import com.example.bus_stop_tracker.data.Stop
-import com.example.bus_stop_tracker.data.loadStopsFromAssets
+import com.example.bus_stop_tracker.data.model.Stop
 import com.example.bus_stop_tracker.ui.theme.BusstoptrackerTheme
+import androidx.lifecycle.lifecycleScope
+import com.example.bus_stop_tracker.data.database.DatabaseProvider
+import com.example.bus_stop_tracker.data.repository.DataImporter
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val db = DatabaseProvider.getDatabase(this)
+        lifecycleScope.launch {
+            DataImporter.importAll(this@MainActivity, db)
+        }
+
+        lifecycleScope.launch {
+            DataImporter.importAll(this@MainActivity, db)
+            val count = db.stopDao().getAllStops().size
+            android.util.Log.d("MainActivity", "Loaded $count stops into DB")
+        }
         /*val stops = loadStopsFromAssets(this)
         Log.d("MainActivity", "Loaded ${stops.size} stops")
         if (stops.isNotEmpty()) {
@@ -61,8 +74,10 @@ fun MainScreen(modifier: Modifier = Modifier) {
     var showSearch by remember { mutableStateOf(false) }
     var selectedStops by remember { mutableStateOf(listOf<Stop>()) }
     val context = LocalContext.current
+    val db = remember { DatabaseProvider.getDatabase(context) }
+
     val allStops by produceState(initialValue = emptyList<Stop>(), context) {
-        value = loadStopsFromAssets(context)
+        value = db.stopDao().getAllStops()
     }
 
     if (showSearch) {
@@ -118,10 +133,10 @@ fun MainScreen(modifier: Modifier = Modifier) {
                         ) {
                             Column {
                                 Text(
-                                    stop.name,
+                                    stop.stop_name,
                                 )
                                 Text(
-                                    text = stop.desc ?: "-",
+                                    text = stop.stop_desc ?: "-",
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
@@ -147,7 +162,7 @@ fun SearchScreen(allStops: List<Stop>, onStopSelected: (Stop) -> Unit, onBack: (
 
     var query by remember { mutableStateOf("") }
 
-    val filteredStops = allStops.filter { it.name.contains(query, ignoreCase = true) }
+    val filteredStops = allStops.filter { it.stop_name.contains(query, ignoreCase = true) }
     val visibleStops = filteredStops.take(20)
 
     Column(
@@ -206,12 +221,12 @@ fun SearchScreen(allStops: List<Stop>, onStopSelected: (Stop) -> Unit, onBack: (
                 ) {
                     Column {
                         Text(
-                            stop.name,
+                            stop.stop_name,
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Start
                         )
                         Text(
-                            text = stop.desc ?: "-",
+                            text = stop.stop_desc ?: "-",
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Start,
                             style = MaterialTheme.typography.bodySmall
@@ -247,9 +262,9 @@ fun MainScreenPreview() {
 fun SearchScreenPreview() {
     BusstoptrackerTheme {
         val mockStops = listOf(
-            Stop("1", "001", "Pramogų arena", "Smth", null, null),
-            Stop("2", "002", "Stotis", "More", null, null),
-            Stop("3", "003", "Didlaukio", "Written", null, null),
+            Stop("1", "Pramogų arena", "Smth", null, null),
+            Stop("2",  "Stotis", "More", null, null),
+            Stop("3", "Didlaukio", "Written", null, null),
         )
 
         SearchScreen(
